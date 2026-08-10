@@ -4,7 +4,7 @@ ServerName mon_domaine
 
 <IfModule mod_ssl.c>
 <VirtualHost *:443>
-	ServerAdmin		mon_domaineee.fr
+	ServerAdmin		mon_domaine@free.fr
 
 	# Blocaged des robots, y compris les moteurs de recherche
 	RewriteEngine		Off

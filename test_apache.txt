@@ -1,73 +1,37 @@
-ServerName mon_domaine
+ServerName mon_service.mon_domaine
+<VirtualHost *:80>
 
-<IfModule mod_ssl.c>
-<VirtualHost *:443>
-	ServerAdmin		admin@localhost
+	ServerAdmin libreeco@free.fr
 
-	# Blocaged des robots, y compris les moteurs de recherche
-	RewriteEngine		Off
+	DocumentRoot /var/www/html/nextcloud/
 
-	# Activation des règles de modsecurity
-	SecRuleEngine		On
-	ProxyRequests		On
+	Redirect permanent /mon_service /
 
-	# Chargement des modules (déjà activé via a2enmod)
-#	LoadModule proxy_module modules/mod_proxy.so
-#	LoadModule proxy_http_module modules/mod_proxy_http.so
-#	LoadModule headers_module modules/mod_headers.so
-
-	# Protection des entêtes des URLs sources
-	<Location /mon_service>
-		Header edit Location "^/$" /mon_service/
+	<Location /var/www/html/nextcloud/>
+		<LimitExcept GET POST>
+			Order Deny,Allow
+			Deny from all
+		</LimitExcept>
 	</Location>
 
-	<Location /mon_service2>
-		Header edit Location "^/$" /mon_service2/
-	</Location>
+	<Directory /var/www/html/nextcloud/>
+		Options +FollowSymlinks
+		AllowOverride All
 
-#	<Location /mon_service3>
-#		Header edit Location "^/$" /mon_service3/
-#	</Location>
+		<IfModule mod_dav.c>
+			Dav Off
+		</IfModule>
 
-	# Protection de l'URL côté client
-	ProxyPreserveHost	On
-	ProxyRequests		Off
+		SetEnv HOME /var/www/html/nextcloud
+		SetEnv HTTP_HOME /var/www/html/nextcloud
+	</Directory>
 
-	# Refléter le schéma côté backend
-	RequestHeader		set X-Forwarded-Proto	"https"
-	RequestHeader		set X-Forwarded-Host	"mon_domaine"
-	RequestHeader		set X-Forwarded-Port	"443"
+	# Mise en cache pour accélérer le fonctionnement du site
+	<FilesMatch "\.(html|css|js|jpg|png)$">
+		Header set Cache-Control "max-age=604800, public"
+	</FilesMatch>
 
-	# Redirection vers les serveurs
-	# Nextcloud
-	ProxyPass		/mon_service http://mon_service.mon_domaine/mon_service/
-	ProxyPassreverse	/mon_service http://mon_service.mon_domaine/mon_service/
+	ErrorLog /var/log/apache2/nextcloud_error.log
+	CustomLog /var/log/apache2/nextcloud_access.log combined
 
-	# Joomla
-	ProxyPass		/mon_service2 http://mon_service2.mon_domaine/mon_service2/
-	ProxyPassReverse	/mon_service2 http://mon_service2.mon_domaine/mon_service2/
-
-	# Assistance vocale
-#	ProxyPass		/mon_service3 http://mon_service3.mon_domaine/mon_service3/
-#	ProxyPassReverse	/mon_service3 http://mon_service3.mon_domaine/mon_service3/
-
-	# Limitation du taux de requêtes
-	<IfModule mod_evasive.c>
-		DOSHashTableSize 3097
-		DOSPageCount 2
-		DOSSiteCount 50
-		DOSPageInterval 1
-		DOSSiteInterval 1
-		DOSBlockingPeriod 10
-	</IfModule>
-
-	# Journalisation
-	ErrorLog		${APACHE_LOG_DIR}/waf_error.log
-	CustomLog		${APACHE_LOG_DIR}/waf_access.log combined
-
-Include /etc/letsencrypt/options-ssl-apache.conf
-ServerAlias www.mon_domaine
-SSLCertificateFile chemin/vers/.cert
-SSLCertificateKeyFile chemin/vers/key
 </VirtualHost>
-</IfModule>
